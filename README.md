@@ -1,4 +1,6 @@
-# clj_pg
+# clj-pg
+
+[![Build Status](https://travis-ci.org/niquola/clj-pg.svg)](https://travis-ci.org/niquola/clj-pg)
 
 A Clojure library designed to ... well, that part is up to you.
 
