@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/niquola/clj-pg.svg)](https://travis-ci.org/niquola/clj-pg)
 
+[![Dependency Status](https://www.versioneye.com/user/projects/56461327b5b03d002200085a/badge.svg?style=flat)](https://www.versioneye.com/user/projects/56461327b5b03d002200085a)
+
 A Clojure library designed to ... well, that part is up to you.
 
 ## Usage
