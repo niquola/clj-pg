@@ -1,4 +1,5 @@
 (ns clj-pg.honey
+  (:refer-clojure :exclude [update])
   (:require [clj-pg.errors :refer [pr-error]]
             [clojure.java.jdbc :as jdbc]
             [clojure.string :as cs]
@@ -33,6 +34,15 @@
 (sql/format {:create-table :users
              :columns [[:id :serial :primary-key]]})
 
+
+(defmethod sqlf/format-clause :drop-table [[_ tbl-name] sql-map]
+  (str "DROP TABLE " (when (:if-exists sql-map) " IF EXISTS ") (sqlf/to-sql tbl-name)))
+
+(sqlf/register-clause! :drop-table 1)
+
+(sql/format {:drop-table :users :if-exists true})
+
+
 (defn- honetize [hsql]
   (cond (map? hsql) (sql/format hsql)
         (vector? hsql) (if (keyword? (first hsql)) (sql/format (apply sql/build hsql)) hsql)
@@ -62,7 +72,15 @@
        :set (dissoc data :id)
        :where [:= :id (:id data)]
        :returning [:*]}
-      (query db)))
+       (query db)
+       (first)))
+
+(defn delete [db tbl id]
+  (->> {:delete-from tbl :where [:= :id id] :returning [:*]}
+       (query db)
+       (first)))
+
+#_(sql/format {:delete-from :x :where [:= :id 1] :returning [:*]})
 
 (comment
   (def db "postgresql://aidbox:aidbox@localhost:5432/test")
