@@ -51,7 +51,6 @@
 
   PGobject
   (result-set-read-column [pgobj _metadata _index]
-    (println (.getType pgobj))
     (let [type  (.getType pgobj)
           value (.getValue pgobj)]
       (case type

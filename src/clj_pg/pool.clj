@@ -13,7 +13,6 @@
    :minimum-idle       10
    :maximum-pool-size  10})
 
-
 (defn upcase [s]
   (str
    (.toUpperCase (.substring s 0 1))
@@ -22,8 +21,6 @@
 (defn propertize [k]
   (let [parts (str/split (name k) #"-")]
     (str (first parts) (str/join "" (map upcase (rest parts))))))
-
-(propertize :data-base-upse)
 
 (defn create-pool [db-name opts]
   (let [props (Properties.)]

@@ -4,7 +4,6 @@
             [clojure.java.jdbc :as jdbc]
             [clojure.string :as cs]
             [clojure.string :as str]
-            [environ.core :refer [env]]
             [honeysql.core :as sql]
             [honeysql.format :as sqlf]
             [honeysql.helpers :as sqlh]))
@@ -40,10 +39,15 @@
 
 (sqlf/register-clause! :drop-table 1)
 
-(sql/format {:drop-table :users :if-exists true})
+(defmethod sqlf/fn-handler "ilike" [_ col qstr]
+  (str (sqlf/to-sql col) " ilike " (sqlf/to-sql qstr)))
 
+(defmethod sqlf/fn-handler "not-ilike" [_ col qstr]
+  (str (sqlf/to-sql col) " not ilike " (sqlf/to-sql qstr)))
 
-(defn- honetize [hsql]
+(sql/format {:select [:*] :from [:ups] :where [:and [:ilike :a 1]]})
+
+(defn honetize [hsql]
   (cond (map? hsql) (sql/format hsql)
         (vector? hsql) (if (keyword? (first hsql)) (sql/format (apply sql/build hsql)) hsql)
         (string? hsql) [hsql]))
@@ -51,7 +55,10 @@
 (defn query
   "query honey SQL"
   ([db hsql]
-   (pr-error (->> (honetize hsql) (jdbc/query db))))
+   (println hsql "\n")
+   (pr-error (let [sql (honetize hsql)]
+               (println sql)
+               (jdbc/query db sql))))
   ([db h & more]
    (query db (into [h] more))))
 
