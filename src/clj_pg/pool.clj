@@ -13,6 +13,7 @@
    :minimum-idle       10
    :maximum-pool-size  10})
 
+
 (defn upcase [s]
   (str
    (.toUpperCase (.substring s 0 1))

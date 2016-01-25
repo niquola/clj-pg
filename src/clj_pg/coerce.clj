@@ -70,6 +70,10 @@
     (.setType "jsonb")
     (.setValue (generate-string value))))
 
+(defn to-pg-array [value]
+  ;; TODO doit better
+  (str "{" (clojure.string/join "," (map #(str "\"" % "\"") value)) "}"))
+
 (extend-protocol jdbc/ISQLValue
   clojure.lang.Keyword
   (sql-value [value] (name value))
@@ -80,5 +84,4 @@
   IPersistentMap
   (sql-value [value] (to-pg-json value))
   IPersistentVector
-  (sql-value [value] (to-pg-json value)))
-
+  (sql-value [value] (to-pg-array value)))

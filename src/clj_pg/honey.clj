@@ -87,9 +87,3 @@
        (query db)
        (first)))
 
-#_(sql/format {:delete-from :x :where [:= :id 1] :returning [:*]})
-
-(comment
-  (def db "postgresql://aidbox:aidbox@localhost:5432/test")
-
-  (query db :select :* :from :users :limit 1))
