@@ -28,4 +28,23 @@
       (is (= 1 (:id item))))
 
     (let [item (sut/delete db :test_items 1)]
-      (is (= 1 (:id item))))))
+      (is (= 1 (:id item)))))
+
+  (testing "JSONB"
+
+    (sut/execute db {:drop-table :test_types_items :if-exists true})
+
+    (sut/execute db {:create-table :test_types_items :columns [[:id :serial :primary :key]
+                                                               [:jsonb_content :jsonb]
+                                                               [:array_content "text[]"]]})
+
+    (let [item (sut/create db :test_types_items {:jsonb_content {:a 1 :b 2}
+                                                 :array_content ["a" "b"]})]
+      (is (= {:a 1 :b 2} (:jsonb_content item)))
+      (is (= ["a" "b"] (:array_content item))))
+
+    (let [item (sut/update db :test_types_items {:id 1
+                                                 :jsonb_content {:c 3}
+                                                 :array_content ["c"]})]
+      (is (= {:c 3} (:jsonb_content item)))
+      (is (= ["c"]  (:array_content item))))))

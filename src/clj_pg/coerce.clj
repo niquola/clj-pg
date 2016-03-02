@@ -35,8 +35,8 @@
 
 (defn parse-int-range [s]
   (let [pair (->
-               (str/replace s #"\[|\]|\(|\)" "")
-               (str/split #","))]
+              (str/replace s #"\[|\]|\(|\)" "")
+              (str/split #","))]
     (mapv read-string pair)))
 
 (extend-protocol jdbc/IResultSetReadColumn

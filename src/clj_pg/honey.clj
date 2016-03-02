@@ -3,6 +3,7 @@
   (:require [clj-pg.errors :refer [pr-error]]
             [clojure.java.jdbc :as jdbc]
             [clojure.string :as cs]
+            [clj-pg.coerce :as coerce]
             [clojure.string :as str]
             [honeysql.core :as sql]
             [honeysql.format :as sqlf]
@@ -45,8 +46,6 @@
 (defmethod sqlf/fn-handler "not-ilike" [_ col qstr]
   (str (sqlf/to-sql col) " not ilike " (sqlf/to-sql qstr)))
 
-(sql/format {:select [:*] :from [:ups] :where [:and [:ilike :a 1]]})
-
 (defn honetize [hsql]
   (cond (map? hsql) (sql/format hsql)
         (vector? hsql) (if (keyword? (first hsql)) (sql/format (apply sql/build hsql)) hsql)
@@ -55,7 +54,6 @@
 (defn query
   "query honey SQL"
   ([db hsql]
-   (println hsql "\n")
    (pr-error (let [sql (honetize hsql)]
                (println sql)
                (jdbc/query db sql))))
@@ -67,18 +65,28 @@
   [db hsql]
   (pr-error (jdbc/execute! db (honetize hsql))))
 
+(defn coerce-entry [ent]
+  (reduce (fn [acc [k v]]
+            (assoc acc k (cond
+                           (vector? v) (coerce/to-pg-array v)
+                           (map? v) (coerce/to-pg-json v)
+                           :else v))
+            ) {} ent))
+
 (defn create [db tbl data]
-  (println (vector? data))
   (let [values (if (vector? data) data [data])
-        res (->> {:insert-into tbl :values values :returning [:*]}
+        values (map coerce-entry values)
+        res (->> {:insert-into tbl
+                  :values values
+                  :returning [:*]}
                 (query db))]
     (if (vector? data) res (first res))))
 
 (defn update [db tbl data]
   (->> {:update tbl
-       :set (dissoc data :id)
-       :where [:= :id (:id data)]
-       :returning [:*]}
+        :set (coerce-entry (dissoc data :id))
+        :where [:= :id (:id data)]
+        :returning [:*]}
        (query db)
        (first)))
 
