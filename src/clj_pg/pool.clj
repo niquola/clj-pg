@@ -13,7 +13,6 @@
    :minimum-idle       10
    :maximum-pool-size  10})
 
-
 (defn upcase [s]
   (str
    (.toUpperCase (.substring s 0 1))
@@ -23,11 +22,12 @@
   (let [parts (str/split (name k) #"-")]
     (str (first parts) (str/join "" (map upcase (rest parts))))))
 
-(defn create-pool [db-name opts]
+(defn create-pool [opts]
   (let [props (Properties.)]
     (.setProperty props "dataSourceClassName" "org.postgresql.ds.PGSimpleDataSource")
     (doseq [[k v] (merge defaults opts)]
-      (.setProperty props (propertize k) (str v)))
+      (when (and k v)
+        (.setProperty props (propertize k) (str v))))
     (-> props
         HikariConfig.
         HikariDataSource.)))

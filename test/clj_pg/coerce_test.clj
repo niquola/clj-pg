@@ -26,7 +26,7 @@
 
     (is (= (type (query "'2015-01-01'::timestamptz"))
            org.joda.time.DateTime))
-   
+
     (is (= (type (query "?::timestamptz" (time/now)))
            org.joda.time.DateTime))
 
@@ -39,3 +39,10 @@
 
     (query "'(1,5)'::int8range")))
 
+(deftest test-arrays
+  (testing "arrays"
+    (is (= (type (sut/to-pg-array db [1 2 3]))
+           org.postgresql.jdbc4.Jdbc4Array))
+
+    (is (= (type (sut/to-pg-array db ["a" "b"] "varchar"))
+           org.postgresql.jdbc4.Jdbc4Array))))

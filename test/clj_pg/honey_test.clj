@@ -4,13 +4,45 @@
             [clojure.test :as t]
             [clojure.test :refer [deftest is testing]]))
 
+(def test_items
+  {:table :test_items
+   :columns {:id    {:type :serial :primary true :weighti 0}
+             :label {:type :text :weight 1}}})
+
+(def test_types_items
+  {:table :test_types_items
+   :columns {:id    {:type :serial :primary true :weighti 0}
+             :jsonb_content {:type :jsonb}
+             :varchar_array_content {:type "varchar" :array true}
+             :int_array_content     {:type "integer" :array true}
+             :date_array_content     {:type "timestamp" :array true}
+             :text_array_content    {:type "text" :array true}}})
+
+(def test_types_items-item
+  {:jsonb_content {:a 1 :b 2}
+   :varchar_array_content ["a" "b"]
+   :int_array_content [1 2]
+   :date_array_content [#inst"1970-01-01"]
+   :text_array_content ["a" "b"]})
+
+(def test_types_items-item*
+  {:id 1
+   :jsonb_content {:c 3}
+   :varchar_array_content ["c"]
+   :int_array_content [3]
+   :text_array_content ["c"]})
+
 (deftest test-coerce
 
   (testing "CRUD"
 
-    (sut/execute db {:drop-table :test_items :if-exists true})
+    (sut/drop-table db test_items {:if-exists true})
 
-    (sut/execute db {:create-table :test_items :columns [[:id :serial :primary :key] [:label :text]]})
+    (is (not (sut/table-exists? db :test_items)))
+
+    (sut/create-table db test_items)
+
+    (is (sut/table-exists? db :test_items))
 
     (is (empty (sut/query db :select :* :from :test_items)))
 
@@ -18,33 +50,39 @@
 
     (is (empty (sut/query db {:select [:*] :from [:test_items]})))
 
-    (let [item (sut/create db :test_items {:label "item-1"})]
+    (let [item (sut/create db test_items {:label "item-1"})]
       (is (not (nil? (:id item)))))
 
-    (let [items  (sut/create db :test_items [{:label "item-1"} {:label "item-2"}])]
+    (let [items  (sut/create db test_items [{:label "item-1"}
+                                            {:label "item-2"}])]
       (is (= 2 (count items))))
 
-    (let [item (sut/update db :test_items {:id 1 :label "changed"})]
+    (let [item (sut/update db test_items {:id 1 :label "changed"})]
       (is (= 1 (:id item))))
 
-    (let [item (sut/delete db :test_items 1)]
+    (let [item (sut/delete db test_items 1)]
       (is (= 1 (:id item)))))
 
   (testing "JSONB"
+    (sut/drop-table db test_types_items {:if-exists true})
 
-    (sut/execute db {:drop-table :test_types_items :if-exists true})
+    (sut/create-table db test_types_items)
 
-    (sut/execute db {:create-table :test_types_items :columns [[:id :serial :primary :key]
-                                                               [:jsonb_content :jsonb]
-                                                               [:array_content "text[]"]]})
+    (let [item (sut/create db test_types_items test_types_items-item)]
+      (is (not (nil? item)))
+      (doseq [[k v] (dissoc item :id)]
+        (is (= (get test_types_items-item k) v))))
 
-    (let [item (sut/create db :test_types_items {:jsonb_content {:a 1 :b 2}
-                                                 :array_content ["a" "b"]})]
-      (is (= {:a 1 :b 2} (:jsonb_content item)))
-      (is (= ["a" "b"] (:array_content item))))
+    (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
+      (doseq [[k v] (dissoc item :id)]
+        (is (= (get test_types_items-item k) v))))
 
-    (let [item (sut/update db :test_types_items {:id 1
-                                                 :jsonb_content {:c 3}
-                                                 :array_content ["c"]})]
+    (let [item (sut/update db test_types_items test_types_items-item*)]
+      (doseq [[k v] (dissoc item :id)]
+        (is (= (get test_types_items-item k) v))))
+
+    (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
       (is (= {:c 3} (:jsonb_content item)))
-      (is (= ["c"]  (:array_content item))))))
+      (is (= ["c"]  (:text_array_content item)))
+      (is (= [3]  (:int_array_content item)))
+      (is (= ["c"]  (:varchar_array_content item))))))

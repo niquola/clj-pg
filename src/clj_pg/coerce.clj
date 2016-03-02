@@ -3,6 +3,7 @@
             [clojure.java.jdbc :as jdbc]
             [clj-time.coerce :as tc]
             [clj-time.core :as t]
+            [clojure.tools.logging :as log]
             [clojure.string :as str])
   (:import clojure.lang.IPersistentMap
            clojure.lang.IPersistentVector
@@ -12,7 +13,7 @@
             Date
             Timestamp
             PreparedStatement]
-           org.postgresql.jdbc4.Jdbc4Array
+           [org.postgresql.jdbc4 Jdbc4Array]
            org.postgresql.util.PGobject))
 
 (defn- to-date [sql-time]
@@ -34,9 +35,8 @@
     (.setTimestamp stmt idx (java.sql.Timestamp. (.getTime v)))))
 
 (defn parse-int-range [s]
-  (let [pair (->
-              (str/replace s #"\[|\]|\(|\)" "")
-              (str/split #","))]
+  (let [pair (-> (str/replace s #"\[|\]|\(|\)" "")
+                 (str/split #","))]
     (mapv read-string pair)))
 
 (extend-protocol jdbc/IResultSetReadColumn
@@ -70,9 +70,14 @@
     (.setType "jsonb")
     (.setValue (generate-string value))))
 
-(defn to-pg-array [value]
-  ;; TODO doit better
-  (str "{" (clojure.string/join "," (map #(str "\"" % "\"") value)) "}"))
+(defn to-pg-array
+  ([db value & [sql-type]]
+   (if-let [con (jdbc/get-connection db)]
+     (.createArrayOf con (or sql-type "text") (into-array value))))
+  ([value]
+   (log/warn "Create array without connection")
+   (str "{" (clojure.string/join "," (map #(str "\"" % "\"") value)) "}")))
+
 
 (extend-protocol jdbc/ISQLValue
   clojure.lang.Keyword
