@@ -12,7 +12,6 @@
    (:result (first (jdbc/query db [(str "SELECT " s " as result") arg])))))
 
 (deftest test-coerce
-
   (testing "result coerce"
     (is (= (query "1") 1))
     (is (= (query "'string'") "string"))
@@ -41,8 +40,9 @@
 
 (deftest test-arrays
   (testing "arrays"
-    (is (= (type (sut/to-pg-array db [1 2 3]))
-           org.postgresql.jdbc4.Jdbc4Array))
+    (with-open [conn (jdbc/get-connection db)]
+      (is (= (type (sut/to-pg-array conn [1 2 3]))
+             org.postgresql.jdbc4.Jdbc4Array))
 
-    (is (= (type (sut/to-pg-array db ["a" "b"] "varchar"))
-           org.postgresql.jdbc4.Jdbc4Array))))
+      (is (= (type (sut/to-pg-array conn ["a" "b"] "varchar"))
+             org.postgresql.jdbc4.Jdbc4Array)))))

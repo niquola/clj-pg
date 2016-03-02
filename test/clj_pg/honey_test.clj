@@ -4,9 +4,11 @@
             [clojure.test :as t]
             [clojure.test :refer [deftest is testing]]))
 
+
 (def test_items
   {:table :test_items
    :columns {:id    {:type :serial :primary true :weighti 0}
+             :tz    {:type :timestamptz}
              :label {:type :text :weight 1}}})
 
 (def test_types_items
@@ -30,11 +32,13 @@
    :jsonb_content {:c 3}
    :varchar_array_content ["c"]
    :int_array_content [3]
+   :date_array_content [#inst"1990-01-01"]
    :text_array_content ["c"]})
 
 (deftest test-coerce
 
   (testing "CRUD"
+    (sut/table-exists? db :test_items)
 
     (sut/drop-table db test_items {:if-exists true})
 
@@ -50,7 +54,7 @@
 
     (is (empty (sut/query db {:select [:*] :from [:test_items]})))
 
-    (let [item (sut/create db test_items {:label "item-1"})]
+    (let [item (sut/create db test_items {:label "item-1" :tz #inst"1966-01-01"})]
       (is (not (nil? (:id item)))))
 
     (let [items  (sut/create db test_items [{:label "item-1"}
@@ -79,10 +83,8 @@
 
     (let [item (sut/update db test_types_items test_types_items-item*)]
       (doseq [[k v] (dissoc item :id)]
-        (is (= (get test_types_items-item k) v))))
+        (is (= (get test_types_items-item* k) v))))
 
     (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
-      (is (= {:c 3} (:jsonb_content item)))
-      (is (= ["c"]  (:text_array_content item)))
-      (is (= [3]  (:int_array_content item)))
-      (is (= ["c"]  (:varchar_array_content item))))))
+      (doseq [[k v] (dissoc item :id)]
+        (is (= (get test_types_items-item* k) v))))))

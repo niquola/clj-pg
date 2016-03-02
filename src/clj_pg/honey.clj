@@ -79,14 +79,13 @@
     (log/info sql)
     (pr-error (jdbc/execute! db sql))))
 
-(defn coerce-entry [db spec ent]
-  (let [conn (or (jdbc/db-find-connection db))]
-    (reduce (fn [acc [k v]]
-             (assoc acc k (cond
-                            (vector? v) (coerce/to-pg-array db v (get-in spec [:columns k :type]))
-                            (map? v) (coerce/to-pg-json v)
-                            :else v))
-             ) {} ent)))
+(defn coerce-entry [conn spec ent]
+  (reduce (fn [acc [k v]]
+            (assoc acc k (cond
+                           (vector? v) (coerce/to-pg-array conn v (get-in spec [:columns k :type]))
+                           (map? v) (coerce/to-pg-json v)
+                           :else v))
+            ) {} ent))
 
 (defn- to-column [k props]
   (filterv identity [k (str (name (:type props)) (when (:array props) "[]"))
@@ -112,30 +111,39 @@
   (let [stm (merge (or opts {}) {:drop-table (:table spec)})]
     (execute db stm)))
 
-(defn create [db {tbl :table :as spec} data]
-  (let [values (if (vector? data) data [data])
-        values (map #(coerce-entry db spec %) values)
-        res (->> {:insert-into tbl
-                  :values values
-                  :returning [:*]}
-                (query db))]
-    (if (vector? data) res (first res))))
+(defn with-connection [db f]
+  (if-let [conn (jdbc/db-find-connection db)]
+    (f conn)
+    (with-open [conn (jdbc/get-connection db)]
+      (f conn))))
 
+(defn create [db {tbl :table :as spec} data]
+  (with-connection db
+    (fn [conn]
+      (let [values (if (vector? data) data [data])
+            values (map #(coerce-entry conn spec %) values)
+            res (->> {:insert-into tbl
+                      :values values
+                      :returning [:*]}
+                     (query {:connection conn}))]
+        (if (vector? data) res (first res))))))
 
 (defn update [db {tbl :table :as spec} data]
-  (->> {:update tbl
-        :set (coerce-entry db spec (dissoc data :id))
-        :where [:= :id (:id data)]
-        :returning [:*]}
-       (query-first db)))
+  (with-connection db
+    (fn [conn]
+      (->> {:update tbl
+            :set (coerce-entry conn spec (dissoc data :id))
+            :where [:= :id (:id data)]
+            :returning [:*]}
+           (query-first {:connection conn})))))
 
 (defn delete [db {tbl :table :as spec} id]
   (->> {:delete-from tbl :where [:= :id id] :returning [:*]}
        (query-first db)))
 
 (defn table-exists? [db tbl]
-  (= "ok"
-     (->> {:select ["ok"]
+  (= 1
+     (->> {:select [1]
            :from [:information_schema.tables]
            :where [:= :table_name (name tbl)]}
           (query-value db))))

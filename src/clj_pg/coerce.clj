@@ -71,9 +71,8 @@
     (.setValue (generate-string value))))
 
 (defn to-pg-array
-  ([db value & [sql-type]]
-   (if-let [con (jdbc/get-connection db)]
-     (.createArrayOf con (or sql-type "text") (into-array value))))
+  ([conn value & [sql-type]]
+   (.createArrayOf conn (or sql-type "text") (into-array value)))
   ([value]
    (log/warn "Create array without connection")
    (str "{" (clojure.string/join "," (map #(str "\"" % "\"") value)) "}")))

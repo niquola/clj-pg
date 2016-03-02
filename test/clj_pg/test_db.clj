@@ -4,14 +4,14 @@
              [environ.core :refer [env]]))
 
 
-(def db-uri (or "jdbc:postgresql://localhost:5432/pgclj?user=aidbox&password=aidbox&stringtype=unspecified"
-                (env :database-url) ))
+(def db-uri (or (env :database-url)
+                "jdbc:postgresql://localhost:5432/pgclj?user=root&password=root&stringtype=unspecified"))
 
-(str db-uri)
-
-(def db {:datasource (poll/create-pool {:idle-timeout       1000
-                                        :minimum-idle       0
-                                        :maximum-pool-size  2
+(def db {:datasource (poll/create-pool {:idle-timeout       10000
+                                        :minimum-idle       1
+                                        :maximum-pool-size  3 
                                         :connection-init-sql "select 1"
                                         :data-source.url  db-uri})})
 
+(comment
+  (poll/close-pool (:datasource db)))
