@@ -49,14 +49,21 @@
         (vector? hsql) (if (keyword? (first hsql)) (sql/format (apply sql/build hsql)) hsql)
         (string? hsql) [hsql]))
 
+(. java.lang.System nanoTime)
+
+(defmacro from-start [start]
+  `(Math/floor (/ (double (- (. java.lang.System nanoTime) ~start)) 1000000.0)))
+
 (defn query
   "query honey SQL"
   ([db hsql]
    (pr-error
-    (let [sql (honetize hsql)]
+    (let [sql (honetize hsql)
+          start (. java.lang.System nanoTime)
+          res (jdbc/query db sql)]
       (log/debug hsql)
-      (log/info sql)
-      (jdbc/query db sql))))
+      (log/info (str "[" (from-start start) "ms]") sql)
+      res)))
   ([db h & more]
    (query db (into [h] more))))
 
@@ -71,10 +78,12 @@
 (defn execute
   "execute honey SQL"
   [db hsql]
-  (let [sql (honetize hsql)]
+  (let [sql (honetize hsql)
+        start (. java.lang.System nanoTime)
+        res (pr-error (jdbc/execute! db sql))]
     (log/debug hsql)
-    (log/info sql)
-    (pr-error (jdbc/execute! db sql))))
+    (log/info (str "[" (from-start start) "ms]") sql)
+    res))
 
 (defn- coerce-entry [conn spec ent]
   (reduce (fn [acc [k v]]
