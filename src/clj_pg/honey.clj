@@ -32,9 +32,6 @@
        (str/join ", " (map #(str/join " " (map name %)) cols))
    ")"))
 
-(sql/format {:create-table :users
-             :columns [[:id :serial :primary-key]]})
-
 
 (defmethod sqlf/format-clause :drop-table [[_ tbl-name] sql-map]
   (str "DROP TABLE " (when (:if-exists sql-map) " IF EXISTS ") (sqlf/to-sql tbl-name)))
@@ -47,7 +44,7 @@
 (defmethod sqlf/fn-handler "not-ilike" [_ col qstr]
   (str (sqlf/to-sql col) " not ilike " (sqlf/to-sql qstr)))
 
-(defn honetize [hsql]
+(defn- honetize [hsql]
   (cond (map? hsql) (sql/format hsql)
         (vector? hsql) (if (keyword? (first hsql)) (sql/format (apply sql/build hsql)) hsql)
         (string? hsql) [hsql]))
@@ -79,7 +76,7 @@
     (log/info sql)
     (pr-error (jdbc/execute! db sql))))
 
-(defn coerce-entry [conn spec ent]
+(defn- coerce-entry [conn spec ent]
   (reduce (fn [acc [k v]]
             (assoc acc k (cond
                            (vector? v) (coerce/to-pg-array conn v (get-in spec [:columns k :type]))
@@ -110,6 +107,16 @@
   {:pre [(map? spec)]}
   (let [stm (merge (or opts {}) {:drop-table (:table spec)})]
     (execute db stm)))
+
+(defn create-database [db db-name & [template]]
+  (let [sql (str "CREATE DATABASE " (name db-name) (when template " TEMPLATE = " template))]
+    (log/info sql)
+    (jdbc/execute! db [sql] :transaction? false)))
+
+(defn drop-database [db db-name]
+  (let [sql (str "DROP DATABASE IF EXISTS " (name db-name))]
+    (log/info sql)
+    (jdbc/execute! db [sql] :transaction? false)))
 
 (defn with-connection [db f]
   (if-let [conn (jdbc/db-find-connection db)]
