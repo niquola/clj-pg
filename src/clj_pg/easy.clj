@@ -11,11 +11,11 @@
 
 (def ^:dynamic *db* nil)
 
-(defonce datasources (atom {}))
-(defonce datasource-fn (atom nil))
+(def datasources (atom {}))
 
 (defn shutdown-connections []
-  (doseq [[nm {conn :datasource}] @datasources]
+  (doseq [[nm {conn :dataource}] @datasources]
+    (log/info "Closing connections for " nm)
     (pool/close-pool conn))
   (reset! datasources {}))
 
@@ -24,16 +24,19 @@
     (pool/close-pool conn)
     (swap! datasources dissoc db-name)))
 
-(defn get-datasource [db-name]
-  (let [ds-fn @datasource-fn]
-    (if (get @datasources db-name)
-      (get @datasources db-name)
-      (let [pool {:datasource (pool/create-pool (ds-fn db-name))}]
-        (swap! datasources assoc db-name pool)
-        pool))))
+(defn get-datasource [db-name ds-fn]
+  (log/info "Get datasource for " db-name "; " @datasources)
+  (if-let [ds (get @datasources db-name)]
+    ds
+    (let [ds-opts  (ds-fn db-name)
+          _ (log/info "Building poll for " db-name "options: " ds-opts)
+          ds (pool/create-pool ds-opts)
+          pool {:datasource ds}]
+      (swap! datasources assoc db-name pool)
+      pool)))
 
-(defmacro with-db [db-name & body]
-  `(binding [*db* (get-datasource ~db-name)] ~@body))
+(defmacro with-db [db-name ds-fn & body]
+  `(binding [*db* (get-datasource ~db-name ~ds-fn)] ~@body))
 
 (defmacro with-db-spec [conn & body]
   `(binding [*db* ~conn] ~@body))
