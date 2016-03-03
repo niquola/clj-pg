@@ -14,7 +14,7 @@
 (def datasources (atom {}))
 
 (defn shutdown-connections []
-  (doseq [[nm {conn :dataource}] @datasources]
+  (doseq [[nm {conn :datasource}] @datasources]
     (log/info "Closing connections for " nm)
     (pool/close-pool conn))
   (reset! datasources {}))
@@ -29,9 +29,9 @@
   (if-let [ds (get @datasources db-name)]
     ds
     (let [ds-opts  (ds-fn db-name)
-          _ (log/info "Building poll for " db-name "options: " ds-opts)
           ds (pool/create-pool ds-opts)
           pool {:datasource ds}]
+      (log/info "Building poll for " db-name " " ds-opts)
       (swap! datasources assoc db-name pool)
       pool)))
 

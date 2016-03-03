@@ -149,8 +149,11 @@
        (query-first db)))
 
 (defn table-exists? [db tbl]
-  (= 1
-     (->> {:select [1]
-           :from [:information_schema.tables]
-           :where [:= :table_name (name tbl)]}
-          (query-value db))))
+  (let [[sch tbl] (str/split (name tbl) #"\." 2)
+        tbl (or tbl sch)
+        sch (if tbl sch "public")]
+    (= 1
+       (->> {:select [1]
+             :from [:information_schema.tables]
+             :where [:and [:= :table_schema sch] [:= :table_name (name tbl)]]}
+            (query-value db)))))
