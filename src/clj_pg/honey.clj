@@ -109,7 +109,7 @@
     (execute db stm)))
 
 (defn create-database [db db-name & [template]]
-  (let [sql (str "CREATE DATABASE " (name db-name) (when template " TEMPLATE = " template))]
+  (let [sql (str "CREATE DATABASE " (name db-name) (when template (str " TEMPLATE = " template)))]
     (log/info sql)
     (jdbc/execute! db [sql] :transaction? false)))
 

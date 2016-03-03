@@ -69,20 +69,20 @@
 (defn drop-table [& args]
   (apply pghoney/drop-table *db* args))
 
-(defn create-database [& args]
-  (apply pghoney/create-database *db* args))
+(defn create-database [db & [template]]
+  (pghoney/create-database *db* db template))
 
-(defn drop-database [& args]
-  (apply pghoney/drop-database *db* args))
+(defn drop-database [db-name]
+  (pghoney/drop-database *db* db-name))
 
-(defn create [& args]
-  (apply pghoney/create *db* args))
+(defn create [spec data]
+  (pghoney/create *db* spec data))
 
 (defn update [& args]
   (apply pghoney/update *db* args))
 
-(defn delete [& args]
-  (apply pghoney/delete *db* args))
+(defn delete [spec id]
+  (pghoney/delete *db* spec id))
 
 (defn table-exists? [& args]
   (apply pghoney/table-exists? *db* args))
