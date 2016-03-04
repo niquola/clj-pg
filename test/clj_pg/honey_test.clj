@@ -15,10 +15,10 @@
   {:table :test_types_items
    :columns {:id    {:type :serial :primary true :weighti 0}
              :jsonb_content {:type :jsonb}
-             :varchar_array_content {:type "varchar" :array true}
-             :int_array_content     {:type "integer" :array true}
+             :varchar_array_content  {:type "varchar" :array true}
+             :int_array_content      {:type "integer" :array true}
              :date_array_content     {:type "timestamp" :array true}
-             :text_array_content    {:type "text" :array true}}})
+             :text_array_content     {:type "text" :array true}}})
 
 (def test_types_items-item
   {:jsonb_content {:a 1 :b 2}

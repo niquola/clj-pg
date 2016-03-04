@@ -60,7 +60,8 @@
    (pr-error
     (let [sql (honetize hsql)
           start (. java.lang.System nanoTime)
-          res (jdbc/query db sql)]
+          _     (log/info sql)
+          res   (jdbc/query db sql)]
       (log/debug hsql)
       (log/info (str "[" (from-start start) "ms]") sql)
       res)))
@@ -80,6 +81,7 @@
   [db hsql]
   (let [sql (honetize hsql)
         start (. java.lang.System nanoTime)
+        _     (log/info sql)
         res (pr-error (jdbc/execute! db sql))]
     (log/debug hsql)
     (log/info (str "[" (from-start start) "ms]") sql)
@@ -89,7 +91,7 @@
   (reduce (fn [acc [k v]]
             (assoc acc k (cond
                            (vector? v) (coerce/to-pg-array conn v (get-in spec [:columns k :type]))
-                           (map? v) (coerce/to-pg-json v)
+                           (map? v)    (coerce/to-pg-json v)
                            :else v))
             ) {} ent))
 
