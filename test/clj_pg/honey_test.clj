@@ -67,6 +67,12 @@
     (let [item (sut/delete db test_items 1)]
       (is (= 1 (:id item)))))
 
+  (testing "quilified-name"
+
+    (is (= ["public" "test_items"] (sut/quailified-name :test_items)))
+    (is (= ["ups" "test_items"] (sut/quailified-name :ups.test_items)))
+    (is (= ["ups" "mups.test_items"] (sut/quailified-name :ups.mups.test_items))))
+
   (testing "JSONB"
     (sut/drop-table db test_types_items {:if-exists true})
 

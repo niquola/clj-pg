@@ -157,10 +157,16 @@
   (->> {:delete-from tbl :where [:= :id id] :returning [:*]}
        (query-first db)))
 
+
+(defn quailified-name [tbl]
+  (let [[i1 i2] (str/split (name tbl) #"\." 2)
+        tbl (if i2 i2 i1)
+        sch (if i2 i1 "public")]
+    [sch tbl]))
+
+
 (defn table-exists? [db tbl]
-  (let [[sch tbl] (str/split (name tbl) #"\." 2)
-        tbl (or tbl sch)
-        sch (if tbl sch "public")]
+  (let [[sch tbl] (quailified-name tbl)]
     (= 1
        (->> {:select [1]
              :from [:information_schema.tables]
