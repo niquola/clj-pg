@@ -59,12 +59,15 @@
   ([db hsql]
    (pr-error
     (let [sql (honetize hsql)
-          start (. java.lang.System nanoTime)
-          _     (log/info sql)
-          res   (jdbc/query db sql)]
+          start (. java.lang.System nanoTime)]
       (log/debug hsql)
-      (log/info (str "[" (from-start start) "ms]") sql)
-      res)))
+      (try
+        (let [res (jdbc/query db sql)]
+          (log/info (str "[" (from-start start) "ms]") sql)
+          res)
+        (catch Exception e
+          (log/error (str "[" (from-start start) "ms]") sql)
+          (throw e))))))
   ([db h & more]
    (query db (into [h] more))))
 
@@ -79,13 +82,17 @@
 (defn execute
   "execute honey SQL"
   [db hsql]
-  (let [sql (honetize hsql)
-        start (. java.lang.System nanoTime)
-        _     (log/info sql)
-        res (pr-error (jdbc/execute! db sql))]
-    (log/debug hsql)
-    (log/info (str "[" (from-start start) "ms]") sql)
-    res))
+  (pr-error
+   (let [sql (honetize hsql)
+         start (. java.lang.System nanoTime)]
+     (log/debug hsql)
+     (try
+       (let [res (jdbc/execute! db sql)]
+         (log/info (str "[" (from-start start) "ms]") sql)
+         res)
+       (catch Exception e
+         (log/error (str "[" (from-start start) "ms]") sql)
+         (throw e))))))
 
 (defn- coerce-entry [conn spec ent]
   (reduce (fn [acc [k v]]

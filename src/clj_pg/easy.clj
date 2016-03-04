@@ -78,8 +78,8 @@
 (defn create [spec data]
   (pghoney/create *db* spec data))
 
-(defn update [& args]
-  (apply pghoney/update *db* args))
+(defn update [spec ent]
+  (pghoney/update *db* spec ent))
 
 (defn delete [spec id]
   (pghoney/delete *db* spec id))
