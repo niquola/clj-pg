@@ -25,7 +25,7 @@
     (swap! datasources dissoc db-name)))
 
 (defn get-datasource [db-name ds-fn]
-  (log/info "Get datasource for " db-name "; " @datasources)
+  (log/info "Get datasource for " db-name)
   (if-let [ds (get @datasources db-name)]
     ds
     (let [ds-opts  (ds-fn db-name)

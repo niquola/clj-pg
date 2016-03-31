@@ -49,8 +49,6 @@
         (vector? hsql) (if (keyword? (first hsql)) (sql/format (apply sql/build hsql)) hsql)
         (string? hsql) [hsql]))
 
-(. java.lang.System nanoTime)
-
 (defmacro from-start [start]
   `(Math/floor (/ (double (- (. java.lang.System nanoTime) ~start)) 1000000.0)))
 
