@@ -69,6 +69,22 @@
   ([db h & more]
    (query db (into [h] more))))
 
+(defn debug-query [db sql]
+  (let [start (. java.lang.System nanoTime)]
+    (try
+      (let [res (pr-error (jdbc/query db sql))
+            duration (from-start start)]
+        (log/info (str "[" duration " ms]") sql)
+        {:result res
+         :duration duration
+         :status "success"
+         :query sql})
+      (catch Exception e
+        {:error (.getMessage e)
+         :duration (from-start start)
+         :status "error"
+         :query sql}))))
+
 (defn query-first [db & hsql]
   (first
    (apply query db hsql)))

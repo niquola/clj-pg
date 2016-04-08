@@ -53,6 +53,8 @@
 
 (defn query [& args] (apply pghoney/query *db* args))
 
+(defn debug-query [sql] (pghoney/debug-query *db* sql))
+
 (defn query-first [& args] (apply pghoney/query-first *db* args))
 
 (defn query-value [& args] (apply pghoney/query-value *db* args))
