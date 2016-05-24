@@ -93,6 +93,12 @@
   (when-let [row (apply query-first db hsql)]
     (first (vals row))))
 
+(defn with-connection [db f]
+  (if-let [conn (jdbc/db-find-connection db)]
+    (f conn)
+    (with-open [conn (jdbc/get-connection db)]
+      (f conn))))
+
 (defn execute
   "execute honey SQL"
   [db hsql]
@@ -106,6 +112,23 @@
          res)
        (catch Exception e
          (log/error (str "[" (from-start start) "ms]") sql)
+         (throw e))))))
+
+(defn exec!
+  "execute raw SQL without escape processing"
+  [db sql]
+  (pr-error
+   (let [start (. java.lang.System nanoTime)]
+     (try
+       (with-connection db
+         (fn [con]
+           (let [stmt (.prepareStatement con sql)
+                 _    (.setEscapeProcessing stmt false)
+                 res  (.execute stmt)]
+             (log/info (str "[" (from-start start) "ms]") " batch " (.substring sql 0 100))
+             res)))
+       (catch Exception e
+         (log/error (str "[" (from-start start) "ms]") " batch " (.substring sql 0 100))
          (throw e))))))
 
 (defn- coerce-entry [conn spec ent]
@@ -150,11 +173,6 @@
     (log/info sql)
     (jdbc/execute! db [sql] :transaction? false)))
 
-(defn with-connection [db f]
-  (if-let [conn (jdbc/db-find-connection db)]
-    (f conn)
-    (with-open [conn (jdbc/get-connection db)]
-      (f conn))))
 
 (defn create [db {tbl :table :as spec} data]
   (with-connection db
@@ -167,14 +185,15 @@
                      (query {:connection conn}))]
         (if (vector? data) res (first res))))))
 
-(defn update [db {tbl :table :as spec} data]
+(defn update [db {tbl :table pk :pk :as spec} data]
   (with-connection db
     (fn [conn]
-      (->> {:update tbl
-            :set (coerce-entry conn spec (dissoc data :id))
-            :where [:= :id (:id data)]
-            :returning [:*]}
-           (query-first {:connection conn})))))
+      (let [pk (or pk :id)]
+        (->> {:update tbl
+              :set (coerce-entry conn spec (dissoc data :id))
+              :where [:= pk (pk data)]
+              :returning [:*]}
+             (query-first {:connection conn}))))))
 
 (defn delete [db {tbl :table :as spec} id]
   (->> {:delete-from tbl :where [:= :id id] :returning [:*]}

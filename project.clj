@@ -10,8 +10,8 @@
                  [environ "1.0.1"]
                  [org.clojure/tools.logging "0.3.1"]
                  [com.zaxxer/HikariCP "2.4.3"]
-                 [org.postgresql/postgresql "9.4-1205-jdbc41"]
-                 [org.clojure/java.jdbc "0.4.2"]
+                 [org.postgresql/postgresql "9.4.1208.jre7"]
+                 [org.clojure/java.jdbc "0.5.0"]
                  [cheshire "5.5.0"]]
 
   :source-paths  ["src" "test"]
