@@ -42,7 +42,7 @@
   (testing "arrays"
     (with-open [conn (jdbc/get-connection db)]
       (is (= (type (sut/to-pg-array conn [1 2 3]))
-             org.postgresql.jdbc4.Jdbc4Array))
+             org.postgresql.jdbc.PgArray))
 
       (is (= (type (sut/to-pg-array conn ["a" "b"] "varchar"))
-             org.postgresql.jdbc4.Jdbc4Array)))))
+             org.postgresql.jdbc.PgArray)))))
