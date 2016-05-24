@@ -195,3 +195,10 @@
              :from [:information_schema.tables]
              :where [:and [:= :table_schema sch] [:= :table_name (name tbl)]]}
             (query-value db)))))
+
+
+(defn database-exists? [db db-name]
+  (->> {:select [true]
+        :from [:pg_database]
+        :where [:= :datname (name db-name)]}
+       (query-value db)))

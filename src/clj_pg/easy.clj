@@ -6,7 +6,8 @@
    [clj-pg.coerce :as coerce]
    [clojure.string :as str]
    [clojure.tools.logging :as log]
-   [environ.core :as env]))
+   [environ.core :as env])
+  (:refer-clojure :exclude [update]))
 
 
 (def ^:dynamic *db* nil)
@@ -88,3 +89,6 @@
 
 (defn table-exists? [& args]
   (apply pghoney/table-exists? *db* args))
+
+(defn database-exists? [& args]
+  (apply pghoney/database-exists? *db* args))
