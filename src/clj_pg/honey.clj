@@ -125,10 +125,10 @@
            (let [stmt (.prepareStatement con sql)
                  _    (.setEscapeProcessing stmt false)
                  res  (.execute stmt)]
-             (log/info (str "[" (from-start start) "ms]") " batch " (.substring sql 0 100))
+             (log/info (str "[" (from-start start) "ms]") " batch " (.substring sql 0 (min 100 (count sql))))
              res)))
        (catch Exception e
-         (log/error (str "[" (from-start start) "ms]") " batch " (.substring sql 0 100))
+         (log/error (str "[" (from-start start) "ms]") " batch " (.substring sql 0 (min 100 (count sql))))
          (throw e))))))
 
 (defn- coerce-entry [conn spec ent]
