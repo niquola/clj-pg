@@ -166,12 +166,12 @@
 (defn create-database [db db-name & [template]]
   (let [sql (str "CREATE DATABASE " (name db-name) (when template (str " TEMPLATE = " template)))]
     (log/info sql)
-    (jdbc/execute! db [sql] :transaction? false)))
+    (jdbc/execute! db [sql] {:transaction? false})))
 
 (defn drop-database [db db-name]
   (let [sql (str "DROP DATABASE IF EXISTS " (name db-name))]
     (log/info sql)
-    (jdbc/execute! db [sql] :transaction? false)))
+    (jdbc/execute! db [sql] {:transaction? false})))
 
 
 (defn create [db {tbl :table :as spec} data]
