@@ -4,11 +4,15 @@
              [environ.core :refer [env]]))
 
 
-(def db {:datasource (poll/create-pool {:idle-timeout       10000
-                                        :minimum-idle       1
-                                        :maximum-pool-size  3
-                                        :connection-init-sql "select 1"
-                                        :data-source.url  (env :database-url)})})
+(defonce pool (atom nil))
 
-(comment
-  (poll/close-pool (:datasource db)))
+(defn db []
+  (if-let [p @pool]
+    p
+    (reset! pool
+            {:datasource (poll/create-pool {:idle-timeout       10000
+                                            :minimum-idle       1
+                                            :maximum-pool-size  3
+                                            :connection-init-sql "select 1"
+                                            :data-source.url  (env :database-url)})})))
+

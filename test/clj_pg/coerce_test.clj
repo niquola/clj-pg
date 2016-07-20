@@ -2,14 +2,16 @@
   (:require [clj-pg.coerce :as sut]
             [clojure.java.jdbc :as jdbc]
             [clj-time.core :as time]
-            [clj-pg.test-db :refer [db]]
+            [clj-pg.test-db :as tdb]
             [clojure.test :refer [deftest is testing]]))
 
 (defn query
   ([s]
-   (:result (first (jdbc/query db [(str "SELECT " s " as result")]))))
+   (let [db (tdb/db)]
+     (:result (first (jdbc/query db [(str "SELECT " s " as result")])))))
   ([s arg]
-   (:result (first (jdbc/query db [(str "SELECT " s " as result") arg])))))
+   (let [db (tdb/db)]
+     (:result (first (jdbc/query db [(str "SELECT " s " as result") arg]))))))
 
 (deftest test-coerce
   (testing "result coerce"
@@ -40,9 +42,10 @@
 
 (deftest test-arrays
   (testing "arrays"
-    (with-open [conn (jdbc/get-connection db)]
-      (is (= (type (sut/to-pg-array conn [1 2 3]))
-             org.postgresql.jdbc.PgArray))
+    (let [db (tdb/db)]
+      (with-open [conn (jdbc/get-connection db)]
+        (is (= (type (sut/to-pg-array conn [1 2 3]))
+               org.postgresql.jdbc.PgArray))
 
-      (is (= (type (sut/to-pg-array conn ["a" "b"] "varchar"))
-             org.postgresql.jdbc.PgArray)))))
+        (is (= (type (sut/to-pg-array conn ["a" "b"] "varchar"))
+               org.postgresql.jdbc.PgArray))))))

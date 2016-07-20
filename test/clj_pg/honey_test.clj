@@ -1,6 +1,6 @@
 (ns clj-pg.honey-test
   (:require [clj-pg.honey :as sut]
-            [clj-pg.test-db :refer [db]]
+            [clj-pg.test-db :as tdb]
             [clojure.test :as t]
             [clojure.test :refer [deftest is testing]]))
 
@@ -37,35 +37,36 @@
 
 (deftest test-coerce
 
-  (testing "CRUD"
-    (sut/table-exists? db :test_items)
+  (let [db (tdb/db)]
+   (testing "CRUD"
+     (sut/table-exists? db :test_items)
 
-    (sut/drop-table db test_items {:if-exists true})
+     (sut/drop-table db test_items {:if-exists true})
 
-    (is (not (sut/table-exists? db :test_items)))
+     (is (not (sut/table-exists? db :test_items)))
 
-    (sut/create-table db test_items)
+     (sut/create-table db test_items)
 
-    (is (sut/table-exists? db :test_items))
+     (is (sut/table-exists? db :test_items))
 
-    (is (empty (sut/query db :select :* :from :test_items)))
+     (is (empty (sut/query db :select :* :from :test_items)))
 
-    (is (empty (sut/query db "SELECT * FROM test_items")))
+     (is (empty (sut/query db "SELECT * FROM test_items")))
 
-    (is (empty (sut/query db {:select [:*] :from [:test_items]})))
+     (is (empty (sut/query db {:select [:*] :from [:test_items]})))
 
-    (let [item (sut/create db test_items {:label "item-1" :tz #inst"1966-01-01"})]
-      (is (not (nil? (:id item)))))
+     (let [item (sut/create db test_items {:label "item-1" :tz #inst"1966-01-01"})]
+       (is (not (nil? (:id item)))))
 
-    (let [items  (sut/create db test_items [{:label "item-1"}
-                                            {:label "item-2"}])]
-      (is (= 2 (count items))))
+     (let [items  (sut/create db test_items [{:label "item-1"}
+                                             {:label "item-2"}])]
+       (is (= 2 (count items))))
 
-    (let [item (sut/update db test_items {:id 1 :label "changed"})]
-      (is (= 1 (:id item))))
+     (let [item (sut/update db test_items {:id 1 :label "changed"})]
+       (is (= 1 (:id item))))
 
-    (let [item (sut/delete db test_items 1)]
-      (is (= 1 (:id item)))))
+     (let [item (sut/delete db test_items 1)]
+       (is (= 1 (:id item))))))
 
   (testing "quilified-name"
 
@@ -73,24 +74,25 @@
     (is (= ["ups" "test_items"] (sut/quailified-name :ups.test_items)))
     (is (= ["ups" "mups.test_items"] (sut/quailified-name :ups.mups.test_items))))
 
-  (testing "JSONB"
-    (sut/drop-table db test_types_items {:if-exists true})
+  (let [db (tdb/db)]
+    (testing "JSONB"
+     (sut/drop-table db test_types_items {:if-exists true})
 
-    (sut/create-table db test_types_items)
+     (sut/create-table db test_types_items)
 
-    (let [item (sut/create db test_types_items test_types_items-item)]
-      (is (not (nil? item)))
-      (doseq [[k v] (dissoc item :id)]
-        (is (= (get test_types_items-item k) v))))
+     (let [item (sut/create db test_types_items test_types_items-item)]
+       (is (not (nil? item)))
+       (doseq [[k v] (dissoc item :id)]
+         (is (= (get test_types_items-item k) v))))
 
-    (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
-      (doseq [[k v] (dissoc item :id)]
-        (is (= (get test_types_items-item k) v))))
+     (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
+       (doseq [[k v] (dissoc item :id)]
+         (is (= (get test_types_items-item k) v))))
 
-    (let [item (sut/update db test_types_items test_types_items-item*)]
-      (doseq [[k v] (dissoc item :id)]
-        (is (= (get test_types_items-item* k) v))))
+     (let [item (sut/update db test_types_items test_types_items-item*)]
+       (doseq [[k v] (dissoc item :id)]
+         (is (= (get test_types_items-item* k) v))))
 
-    (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
-      (doseq [[k v] (dissoc item :id)]
-        (is (= (get test_types_items-item* k) v))))))
+     (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
+       (doseq [[k v] (dissoc item :id)]
+         (is (= (get test_types_items-item* k) v)))))))
