@@ -6,19 +6,23 @@
    [clj-pg.coerce :as coerce]
    [clojure.string :as str]
    [clojure.tools.logging :as log]
-   [environ.core :as env])
+   [mount.lite :refer [defstate]])
   (:refer-clojure :exclude [update]))
 
-
-(def ^:dynamic *db* nil)
-
-(def datasources (atom {}))
-
-(defn shutdown-connections []
+(defn stop [datasources]
   (doseq [[nm {conn :datasource}] @datasources]
     (log/info "Closing connections for " nm)
     (pool/close-pool conn))
   (reset! datasources {}))
+
+(defstate datasources
+  :start (atom {})
+  :stop (stop datasources))
+
+(def ^:dynamic *db* nil)
+
+(defn shutdown-connections []
+  (stop datasources))
 
 (defn shutdown-connections-for-db [db-name]
   (when-let [{conn :datasource} (get @datasources db-name)]
@@ -32,7 +36,7 @@
     (let [ds-opts  (ds-fn db-name)
           ds (pool/create-pool ds-opts)
           pool {:datasource ds}]
-      (log/info "Building poll for " db-name " " ds-opts)
+      (log/info "Building poll for" db-name ds-opts)
       (swap! datasources assoc db-name pool)
       pool)))
 
