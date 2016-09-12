@@ -96,3 +96,9 @@
      (let [item (sut/query-first db {:select [:*] :from [:test_types_items] :limit 1})]
        (doseq [[k v] (dissoc item :id)]
          (is (= (get test_types_items-item* k) v)))))))
+
+(def create-table
+  {:table :createtable
+   :columns {:id    {:type :serial :primary true :weight 0}
+             :tz    {:type :timestamptz :default "current_timestamptz" :weight 1}
+             :label {:type :text :weight 1}}})

@@ -148,15 +148,17 @@
             (conj acc (to-column k props))
             ) [] cols))
 
+(defn create-table-hsql [spec]
+  {:create-table (:table spec)
+   :columns  (to-columns (:columns spec))})
+
 (defn create-table [db spec]
   "expected spec in format
       {:table :test_items
        :columns {:id    {:type :serial :primary true :weighti 0}
                  :label {:type :text :weight 1}}}"
   {:pre [(map? spec)]}
-  (let [stm {:create-table (:table spec)
-             :columns  (to-columns (:columns spec))}]
-    (execute db stm)))
+  (execute db (create-table-hsql spec)))
 
 (defn drop-table [db spec & [opts]]
   {:pre [(map? spec)]}
