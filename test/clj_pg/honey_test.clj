@@ -1,9 +1,9 @@
 (ns clj-pg.honey-test
   (:require [clj-pg.honey :as sut]
             [clj-pg.test-db :as tdb]
-            [clojure.test :as t]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :as t :refer [deftest is testing]]))
 
+(tdb/reset)
 
 (def test_items
   {:table :test_items
@@ -36,7 +36,6 @@
    :text_array_content ["c"]})
 
 (deftest test-coerce
-
   (let [db (tdb/db)]
    (testing "CRUD"
      (sut/table-exists? db :test_items)
@@ -97,8 +96,38 @@
        (doseq [[k v] (dissoc item :id)]
          (is (= (get test_types_items-item* k) v)))))))
 
-(def create-table
-  {:table :createtable
-   :columns {:id    {:type :serial :primary true :weight 0}
-             :tz    {:type :timestamptz :default "current_timestamptz" :weight 1}
-             :label {:type :text :weight 1}}})
+(def base-create-table-spec
+  {:table :basecreatetablespec
+   :columns {:id    {:type :serial :primary true :weight 0}}})
+
+(def create-table-spec
+  {:table :createtablespec
+   :columns {:id    {:type :serial :primary true :weight 2}
+             :tz    {:type :timestamptz :default "CURRENT_TIMESTAMP" :weight 200}
+             :num {:type :integer :default 5 :weight 3}
+             :label {:type :text :not-null true :weight 0}}
+   :inherits [:basecreatetablespec]})
+
+
+(deftest test-coerce
+  (let [db (tdb/db)]
+    (sut/drop-table db create-table-spec {:if-exists true})
+    (sut/drop-table db base-create-table-spec {:if-exists true})
+
+    (sut/create-table db base-create-table-spec)
+    (sut/create-table db create-table-spec)
+
+    (testing "defaults"
+      (let [res (sut/create db create-table-spec {:label "item-1"})]
+        (is (not (nil? (:tz res))))
+        (is (= 5 (:num res)))))
+
+    (testing "not-nil"
+      (is (thrown? org.postgresql.util.PSQLException #".*violates not-null constraint.*"
+                   (sut/create db create-table-spec {:label nil}))))
+
+    (testing "inheritance"
+      (let [res (sut/query db {:select [:*] :from [:basecreatetablespec]})]
+        (is (not (empty? res)))))
+
+    ))

@@ -3,7 +3,11 @@
             [clojure.test :refer [deftest is testing]]
             [environ.core :refer [env]]
             [clojure.test :as t]
-            [clojure.string :as str]))
+            [clj-pg.test-db :as tdb]
+            [clojure.string :as str]
+            [mount.lite :as mount]))
+
+(mount/start)
 
 (sut/shutdown-connections)
 
@@ -13,11 +17,11 @@
    :maximum-pool-size  3
    :connection-init-sql "select 1"
    :data-source.url    (if (= :default db-name)
-                         (env :database-url)
-                         (str/replace (env :database-url-template) #"DATABASE" (name db-name)))})
+                         (or (env :database-url) tdb/database-url)
+                         (str/replace (or (env :database-url-template) tdb/database-template-url) #"DATABASE" (name db-name)))})
 
 (def table-spec {:table :cljpg1
-                 :columns {:id {:type :serial :primary true}
+                 :columns {:id    {:type :serial :primary true}
                            :title {:type :text}}})
 
 (deftest test-easy-interface

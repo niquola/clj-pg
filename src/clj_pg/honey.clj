@@ -25,12 +25,18 @@
 (defmethod sqlf/format-clause :create-table [[_ tbl-name] sql-map]
   (str "CREATE TABLE " (sqlf/to-sql tbl-name)))
 
+
 (sqlf/register-clause! :columns 2)
 
 (defmethod sqlf/format-clause :columns [[_ cols] sql-map]
   (str "("
        (str/join ", " (map #(str/join " " (map name %)) cols))
    ")"))
+
+(sqlf/register-clause! :inherits 3)
+
+(defmethod sqlf/format-clause :inherits [[_ tbls] sql-map]
+  (when tbls (str " INHERITS (" (str/join "," (map name tbls)) ")")))
 
 
 (defmethod sqlf/format-clause :drop-table [[_ tbl-name] sql-map]
@@ -106,6 +112,7 @@
    (let [sql (honetize hsql)
          start (. java.lang.System nanoTime)]
      (log/debug hsql)
+     (println sql)
      (try
        (let [res (jdbc/execute! db sql)]
          (log/info (str "[" (from-start start) "ms]") sql)
@@ -136,26 +143,30 @@
             (assoc acc k (cond
                            (vector? v) (coerce/to-pg-array conn v (get-in spec [:columns k :type]))
                            (map? v)    (coerce/to-pg-json v)
-                           :else v))
-            ) {} ent))
+                           :else v)))
+          {} ent))
 
 (defn- to-column [k props]
   (filterv identity [k (str (name (:type props)) (when (:array props) "[]"))
-                     (when (:primary props) "PRIMARY KEY")]))
+                     (when (:primary props) "PRIMARY KEY")
+                     (when-let [d (:default props)] (str "DEFAULT " d))
+                     (when (:not-null props) "NOT NULL")]))
 
 (defn- to-columns [cols]
   (reduce (fn [acc [k props]]
-            (conj acc (to-column k props))
-            ) [] cols))
+            (conj acc (to-column k props)))
+          [] (sort-by #(or (get-in % [1 :weight]) 100) cols)))
 
 (defn create-table-hsql [spec]
   {:create-table (:table spec)
-   :columns  (to-columns (:columns spec))})
+   :columns  (to-columns (:columns spec))
+   :inherits (:inherits spec)})
+
 
 (defn create-table [db spec]
   "expected spec in format
       {:table :test_items
-       :columns {:id    {:type :serial :primary true :weighti 0}
+       :columns {:id    {:type :serial :default "5" :primary true :weighti 0}
                  :label {:type :text :weight 1}}}"
   {:pre [(map? spec)]}
   (execute db (create-table-hsql spec)))
@@ -210,7 +221,8 @@
 
 
 (defn table-exists? [db tbl]
-  (let [[sch tbl] (quailified-name tbl)]
+  (let [tbl (if (map? tbl) (:table tbl) tbl)
+        [sch tbl] (quailified-name tbl)]
     (= 1
        (->> {:select [1]
              :from [:information_schema.tables]

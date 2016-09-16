@@ -36,7 +36,9 @@
 
     (is (= 1 (query "(?)->'a'" {:a 1})))
 
-    (is (= "ups" (query "?" :ups)))
+    (is (= "ups" (query "?::text" :ups)))
+
+    (is (= "ups" (query "?::text" "ups")))
 
     (query "'(1,5)'::int8range")))
 
