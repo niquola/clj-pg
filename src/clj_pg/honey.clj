@@ -16,7 +16,7 @@
   (str "RETURNING "
        (when (:modifiers sql-map)
          (str (sqlf/space-join (map (comp clojure.string/upper-case name)
-                               (:modifiers sql-map)))
+                                    (:modifiers sql-map)))
               " "))
        (sqlf/comma-join (map sqlf/to-sql fields))))
 
@@ -31,7 +31,7 @@
 (defmethod sqlf/format-clause :columns [[_ cols] sql-map]
   (str "("
        (str/join ", " (map #(str/join " " (map name %)) cols))
-   ")"))
+       ")"))
 
 (sqlf/register-clause! :inherits 3)
 
@@ -43,6 +43,51 @@
   (str "DROP TABLE " (when (:if-exists sql-map) " IF EXISTS ") (sqlf/to-sql tbl-name)))
 
 (sqlf/register-clause! :drop-table 1)
+
+;; UPSERT (from https://github.com/nilenso/honeysql-postgres/)
+
+(sqlf/register-clause! :do-update-set 235)
+(sqlf/register-clause! :do-update-set! 235)
+(sqlf/register-clause! :do-nothing 235)
+(sqlf/register-clause! :upsert 225)
+
+(defmethod sqlf/format-clause :on-conflict-constraint [[_ k] _]
+  (let [get-first #(if (sequential? %)
+                     (first %)
+                     %)]
+    (str "ON CONFLICT ON CONSTRAINT " (-> k
+                                          get-first
+                                          sqlf/to-sql))))
+
+(defmethod sqlf/format-clause :on-conflict [[_ ids] _]
+  (let [comma-join-args #(if (nil? %)
+                           ""
+                           (->> %
+                                (map sqlf/to-sql)
+                                sqlf/comma-join
+                                sqlf/paren-wrap))]
+    (str "ON CONFLICT " (comma-join-args ids))))
+
+(defmethod sqlf/format-clause :do-nothing [_ _]
+  "DO NOTHING")
+
+(defmethod sqlf/format-clause :do-update-set! [[_ values] _]
+  (str "DO UPDATE SET " (sqlf/comma-join (for [[k v] values]
+                                           (str (sqlf/to-sql k) " = " (sqlf/to-sql v))))))
+
+(defmethod sqlf/format-clause :do-update-set [[_ values] _]
+  (str "DO UPDATE SET "
+       (sqlf/comma-join (map #(str (sqlf/to-sql %) " = EXCLUDED." (sqlf/to-sql %))
+                             values))))
+
+(defn- format-upsert-clause [upsert]
+  (let [ks (keys upsert)]
+    (map #(sqlf/format-clause % (find upsert %)) upsert)))
+
+(defmethod sqlf/format-clause :upsert [[_ upsert] _]
+  (sqlf/space-join (format-upsert-clause upsert)))
+
+;; END UPSERT
 
 (defmethod sqlf/fn-handler "ilike" [_ col qstr]
   (str (sqlf/to-sql col) " ilike " (sqlf/to-sql qstr)))
