@@ -157,7 +157,6 @@
    (let [sql (honetize hsql)
          start (. java.lang.System nanoTime)]
      (log/debug hsql)
-     (println sql)
      (try
        (let [res (jdbc/execute! db sql)]
          (log/info (str "[" (from-start start) "ms]") sql)
