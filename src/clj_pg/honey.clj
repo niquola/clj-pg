@@ -92,6 +92,10 @@
 (defmethod sqlf/fn-handler "ilike" [_ col qstr]
   (str (sqlf/to-sql col) " ilike " (sqlf/to-sql qstr)))
 
+(doseq [op ["@@" "@>" "<@" "||" "&&" "->" "->>" "#>>" "#>" "?" "?|" "?&" "#-"]]
+  (defmethod sqlf/fn-handler op [_ col qstr]
+    (str (sqlf/to-sql col) " " op " " (sqlf/to-sql qstr))))
+
 (defmethod sqlf/fn-handler "not-ilike" [_ col qstr]
   (str (sqlf/to-sql col) " not ilike " (sqlf/to-sql qstr)))
 
