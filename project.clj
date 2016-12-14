@@ -1,4 +1,4 @@
-(defproject clj-pg "0.0.1-RC1"
+(defproject clj-pg "0.0.1-RC2"
   :description "Collection of helpers to work with pg from clj"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
