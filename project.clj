@@ -13,7 +13,7 @@
                  [org.clojure/tools.logging "0.3.1"]
                  [com.zaxxer/HikariCP "2.5.1"]
                  [org.postgresql/postgresql "9.4.1208.jre7"]
-                 [org.clojure/java.jdbc "0.5.0"]
+                 [org.clojure/java.jdbc "0.6.1"]
                  [cheshire "5.6.3"]
                  [functionalbytes/mount-lite "0.9.8"]]
 
