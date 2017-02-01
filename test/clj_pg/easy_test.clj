@@ -28,10 +28,15 @@
   (testing "easy"
 
     (sut/with-db :default datasource-fn
+      (sut/execute! "CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');")
+      (sut/execute! "ALTER TYPE mood ADD VALUE 'ups';"))
+
+    (sut/with-db :default datasource-fn
       (sut/drop-database :cljpg1))
 
     (sut/with-db :default datasource-fn
       (sut/drop-database :cljpg2))
+
 
     (sut/with-db :default datasource-fn
       (sut/create-database :cljpg1))

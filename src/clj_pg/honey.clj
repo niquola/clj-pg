@@ -169,6 +169,21 @@
          (log/error (str "[" (from-start start) "ms]") sql)
          (throw e))))))
 
+(defn execute!
+  "execute honey SQL out of transaction"
+  [db hsql]
+  (pr-error
+   (let [sql (honetize hsql)
+         start (. java.lang.System nanoTime)]
+     (log/debug hsql)
+     (try
+       (let [res (jdbc/execute! db sql {:transaction? false})]
+         (log/info (str "[" (from-start start) "ms]") sql)
+         res)
+       (catch Exception e
+         (log/error (str "[" (from-start start) "ms]") sql)
+         (throw e))))))
+
 (defn exec!
   "execute raw SQL without escape processing"
   [db sql]

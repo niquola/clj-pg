@@ -66,6 +66,8 @@
 
 (defn execute [& args] (apply pghoney/execute *db* args))
 
+(defn execute! [& args] (apply pghoney/execute! *db* args))
+
 (defn create-table [spec]
   "expected spec in format
       {:table :test_items
