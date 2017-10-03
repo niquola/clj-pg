@@ -40,6 +40,9 @@
       (swap! datasources assoc db-name pool)
       pool)))
 
+(defn get-connection ^com.zaxxer.hikari.pool.HikariProxyConnection [dbname]
+  (.getConnection (:datasource (get @datasources dbname))))
+
 (defmacro with-db [db-name ds-fn & body]
   `(binding [*db* (get-datasource ~db-name ~ds-fn)] ~@body))
 
