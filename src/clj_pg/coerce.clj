@@ -17,17 +17,24 @@
            org.postgresql.util.PGobject))
 
 (defn- to-date [sql-time]
-  (tc/from-sql-time sql-time))
+  (tc/from-sql-date sql-time))
 
 (defn- to-sql-date [clj-time]
+  (tc/to-sql-date clj-time))
+
+(defn- to-datetime [sql-time]
+  (tc/from-sql-time sql-time))
+
+(defn- to-sql-datetime [clj-time]
   (tc/to-sql-time clj-time))
+
 
 (extend-protocol jdbc/IResultSetReadColumn
   java.sql.Date
   (result-set-read-column [v _ _] (to-date v))
 
   java.sql.Timestamp
-  (result-set-read-column [v _ _] (to-date v)))
+  (result-set-read-column [v _ _] (to-datetime v)))
 
 (extend-type java.util.Date
   jdbc/ISQLParameter
@@ -44,7 +51,7 @@
   (result-set-read-column [v _ _] (to-date v))
 
   Timestamp
-  (result-set-read-column [v _ _] (to-date v))
+  (result-set-read-column [v _ _] (to-datetime v))
 
   PgArray
   (result-set-read-column [v _ _] (vec (.getArray v)))
@@ -82,7 +89,7 @@
   clojure.lang.Keyword
   (sql-value [value] (name value))
   org.joda.time.DateTime
-  (sql-value [value] (to-sql-date value))
+  (sql-value [value] (to-sql-datetime value))
   java.util.Date
   (sql-value [value] (java.sql.Timestamp. (.getTime value)))
   IPersistentMap
