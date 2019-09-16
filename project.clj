@@ -1,6 +1,6 @@
 (defproject clj-pg "0.0.3"
   :description "Collection of helpers to work with pg from clj"
-  :url "http://example.com/FIXME"
+  :url "https://github.com/niquola/clj-pg"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
@@ -19,5 +19,5 @@
 
   :source-paths  ["src" "test"]
 
-  :profiles {:dev {:plugins [[lein-ancient "0.6.10"]] 
+  :profiles {:dev {:plugins [[lein-ancient "0.6.10"]]
                    :dependencies  [[ch.qos.logback/logback-classic "1.1.7"]]}})
