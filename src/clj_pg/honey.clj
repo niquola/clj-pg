@@ -100,7 +100,7 @@
   (str (sqlf/to-sql col) " not ilike " (sqlf/to-sql qstr)))
 
 (defn- honetize [hsql]
-  (cond (map? hsql) (sql/format hsql :quoting :ansi)
+  (cond (map? hsql) (sql/format (sql/build hsql) :quoting :ansi)
         (vector? hsql) (if (keyword? (first hsql)) (sql/format (apply sql/build hsql) :quoting :ansi) hsql)
         (string? hsql) [hsql]))
 
